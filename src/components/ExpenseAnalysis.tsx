@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
+import { EXPENSE_CATEGORIES } from '@/commons';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
 
 interface Expense {
-  id: string;
+  _id: string;
   description: string;
   amount: number;
   category: string;
@@ -20,6 +21,7 @@ const ExpenseAnalysis: React.FC = () => {
   const [categoryTotals, setCategoryTotals] = useState<{ [key: string]: number }>({});
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   useEffect(() => {
     fetchExpenses();
@@ -63,7 +65,7 @@ const ExpenseAnalysis: React.FC = () => {
   };
 
   const doughnutChartData = {
-    labels: Object.keys(categoryTotals),
+    labels: Object.keys(categoryTotals).map(category => `${category} ($${categoryTotals[category].toFixed(2)})`),
     datasets: [
       {
         data: Object.values(categoryTotals),
@@ -102,6 +104,17 @@ const ExpenseAnalysis: React.FC = () => {
         display: true,
         text: 'Expense Categories',
       },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            const label = context.label || '';
+            const value = context.parsed || 0;
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = ((value / total) * 100).toFixed(2);
+            return `${label}: ${percentage}%`;
+          }
+        }
+      }
     },
   };
 
@@ -111,6 +124,42 @@ const ExpenseAnalysis: React.FC = () => {
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedMonth(parseInt(e.target.value));
+  };
+
+  const handleEdit = (expense: Expense) => {
+    setEditingExpense(expense);
+  };
+
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingExpense) return;
+
+    const response = await fetch(`/api/expenses?id=${editingExpense._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(editingExpense),
+    });
+
+    if (response.ok) {
+      setEditingExpense(null);
+      fetchExpenses();
+    } else {
+      console.error('Failed to update expense');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const response = await fetch(`/api/expenses?id=${id}`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      fetchExpenses();
+    } else {
+      console.error('Failed to delete expense');
+    }
   };
 
   return (
@@ -143,15 +192,136 @@ const ExpenseAnalysis: React.FC = () => {
           onClick={fetchExpenses}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
-          Fetch Expenses
+          Fetch
         </button>
       </div>
       <div className="mb-8">
         <Bar data={barChartData} options={barChartOptions} />
       </div>
-      <div>
+      <div className="mb-8">
         <Doughnut data={doughnutChartData} options={doughnutChartOptions} />
       </div>
+      <div className="mb-8">
+        <h3 className="text-xl font-bold mb-4">Monthly Transactions</h3>
+        <table className="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border border-gray-300 p-2">Date</th>
+              <th className="border border-gray-300 p-2">Description</th>
+              <th className="border border-gray-300 p-2">Amount</th>
+              <th className="border border-gray-300 p-2">Category</th>
+              <th className="border border-gray-300 p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {expenses.map((expense) => (
+              <tr key={expense._id}>
+                <td className="border border-gray-300 p-2">{new Date(expense.date).toLocaleDateString()}</td>
+                <td className="border border-gray-300 p-2">{expense.description}</td>
+                <td className="border border-gray-300 p-2">${expense.amount.toFixed(2)}</td>
+                <td className="border border-gray-300 p-2">{expense.category}</td>
+                <td className="border border-gray-300 p-2">
+                  <button
+                    onClick={() => handleEdit(expense)}
+                    className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded mr-2"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onDoubleClick={() => handleDelete(expense._id)}
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {editingExpense && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <h3 className="text-lg font-bold mb-4">Edit Expense</h3>
+            <form onSubmit={handleUpdate}>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  id="description"
+                  value={editingExpense.description}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, description: e.target.value })}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="amount">
+                  Amount
+                </label>
+                <input
+                  type="number"
+                  id="amount"
+                  value={editingExpense.amount}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, amount: parseFloat(e.target.value) })}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                  step="0.01"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="category">
+                  Category
+                </label>
+                <select
+                  id="category"
+                  value={editingExpense.category}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, category: e.target.value })}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                >
+                  <option value="">Select a category</option>
+                  {EXPENSE_CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="date">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  id="date"
+                  value={editingExpense.date.split('T')[0]}
+                  onChange={(e) => setEditingExpense({ ...editingExpense, date: e.target.value })}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <button
+                  type="submit"
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                  Update
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingExpense(null)}
+                  className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

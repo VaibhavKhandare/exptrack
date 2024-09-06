@@ -3,12 +3,15 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse';
 import { EXPENSE_CATEGORIES } from '@/commons';
+import axios from 'axios';
 
 const BulkAddExpenses: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [csvText, setCsvText] = useState<string>('');
   const [expenses, setExpenses] = useState<any[]>([]);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) setFile(e.target.files[0]);
@@ -43,8 +46,23 @@ const BulkAddExpenses: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    // Implement the API call to save expenses
-    console.log('Submitting expenses:', expenses);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.patch('/api/expenses', { expenses });
+      console.log('Expenses saved successfully:', response.data);
+      // Clear the form or show a success message
+      setExpenses([]);
+      setCsvText('');
+      setFile(null);
+      // You might want to show a success message to the user here
+    } catch (err) {
+      console.error('Error saving expenses:', err);
+      setError('Failed to save expenses. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -104,9 +122,14 @@ const BulkAddExpenses: React.FC = () => {
               ))}
             </tbody>
           </table>
-          <button onClick={handleSubmit} className="mt-4 bg-green-500 text-white px-4 py-2 rounded">
-            Save Expenses
+          <button 
+            onClick={handleSubmit} 
+            className={`mt-4 bg-green-500 text-white px-4 py-2 rounded ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : 'Save Expenses'}
           </button>
+          {error && <p className="text-red-500 mt-2">{error}</p>}
         </div>
       )}
     </div>

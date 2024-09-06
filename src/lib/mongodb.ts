@@ -1,6 +1,6 @@
 // lib/mongodb.ts
 import { EXPENSE_CATEGORIES } from '@/commons'
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Invalid/Missing environment variable: "MONGODB_URI"')
@@ -37,7 +37,7 @@ export default clientPromise
 export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number];
 
 export interface Expense {
-  _id?: string;
+  _id?: ObjectId;
   description: string;
   amount: number;
   category: ExpenseCategory;
@@ -74,12 +74,39 @@ export async function getExpenses(startDate?: Date, endDate?: Date): Promise<Exp
   }));
 }
 
-export async function addExpense(expense: Omit<Expense, '_id' | 'date'>): Promise<string> {
+async function getExpensesCollection() {
   const client = await clientPromise;
   const db = client.db("expenseTracker");
-  const result = await db.collection<Expense>("expenses").insertOne({
-    ...expense,
-    date: new Date(),
-  });
-  return result.insertedId.toString();
+  return db.collection<Expense>("expenses");
+}
+
+export async function addExpense(expense: Expense | Expense[]): Promise<{ insertedId?: ObjectId, insertedCount?: number }> {
+  const collection = await getExpensesCollection();
+  
+  if (Array.isArray(expense)) {
+    const result = await collection.insertMany(expense);
+    return { insertedCount: result.insertedCount };
+  } else {
+    const result = await collection.insertOne(expense);
+    return { insertedId: result.insertedId };
+  }
+}
+
+export async function updateExpense(id: string, updateData: Partial<Expense>): Promise<boolean> {
+  const client = await clientPromise;
+  const db = client.db("expenseTracker");
+  
+  const result = await db.collection<Expense>("expenses").updateOne(
+    { _id: new ObjectId(id) },
+    { $set: updateData }
+  );
+  
+  return result.modifiedCount > 0;
+}
+
+export async function deleteExpense(id: string): Promise<boolean> {
+  const client = await clientPromise;
+  const db = client.db("expenseTracker");
+  const result = await db.collection<Expense>("expenses").deleteOne({ _id: new ObjectId(id) });
+  return result.deletedCount > 0;
 }
