@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 import Papa from 'papaparse';
 import { EXPENSE_CATEGORIES, midVibrate, smallVibrate } from '@/commons';
 import axios from 'axios';
-import { Input } from '@components/ui/input';
-import { Textarea } from '@components/ui/textarea';
-import { Button } from '@components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -15,8 +15,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@components/ui/table"
-import { Select, SelectContent, SelectItem, SelectValue } from '@components/ui/select';
+} from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { SelectTrigger } from '@radix-ui/react-select';
 import { toast } from 'sonner';
 

@@ -4,16 +4,16 @@ import React, { useEffect, useState } from 'react';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
 import { EXPENSE_CATEGORIES } from '@/commons';
-import { Button } from "@components/ui/button"
-import { Input } from "@components/ui/input"
-import { Label } from "@components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@components/ui/select"
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -21,15 +21,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@components/ui/table"
+} from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@components/ui/dialog"
-import { Skeleton } from "@components/ui/skeleton"
+} from "@/components/ui/dialog"
+import { Skeleton } from "@/components/ui/skeleton"
 
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
