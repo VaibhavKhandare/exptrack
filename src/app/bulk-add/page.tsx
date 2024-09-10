@@ -55,11 +55,6 @@ const BulkAddExpenses: React.FC = () => {
     }
   };
 
-  // const handleCategoryChange = (index: number, category: string) => {
-  //   const updatedExpenses = [...expenses];
-  //   updatedExpenses[index].category = category;
-  //   setExpenses(updatedExpenses);
-  // };
 
   const handleTableCellChange = (index: number, value: string, type: string) => {
     const updatedExpenses = [...expenses];
