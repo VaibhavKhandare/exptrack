@@ -1,4 +1,4 @@
-import ExpenseAnalysis from '@/components/ExpenseAnalysis';
+import ExpenseAnalysis from '@components/ExpenseAnalysis';
 
 export default function Home() {
   return (

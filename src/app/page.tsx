@@ -1,5 +1,4 @@
-import ExpenseAnalysis from '@/components/ExpenseAnalysis';
-import ExpenseTracker from '@/components/ExpenseTracker';
+import ExpenseTracker from '@components/ExpenseTracker';
 
 export default function Home() {
   return (
