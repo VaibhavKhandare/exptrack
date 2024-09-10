@@ -5,7 +5,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card } from "@/components/ui/card"
 import Image from 'next/image'
 import { toast } from "sonner"
@@ -13,7 +12,7 @@ import { toast } from "sonner"
 
 import { useMediaQuery } from 'react-responsive';
 import { EXPENSE_CATEGORIES, midVibrate, smallVibrate } from '@/commons'
-import { Slider } from './ui/slider'
+import { Slider } from '@/components/ui/slider'
 
 const ExpenseTracker: React.FC = () => {
   const [description, setDescription] = useState('')
