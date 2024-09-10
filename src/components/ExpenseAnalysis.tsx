@@ -4,6 +4,33 @@ import React, { useEffect, useState } from 'react';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
 import { EXPENSE_CATEGORIES } from '@/commons';
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Skeleton } from "@/components/ui/skeleton"
+
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend);
 
@@ -22,17 +49,25 @@ const ExpenseAnalysis: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     fetchExpenses();
   }, [selectedYear, selectedMonth]);
 
   const fetchExpenses = async () => {
-    const response = await fetch(`/api/expenses?year=${selectedYear}&month=${selectedMonth}`);
-    const data = await response.json();
-    setExpenses(data);
-    calculateMonthlyTotals(data);
-    calculateCategoryTotals(data);
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/expenses?year=${selectedYear}&month=${selectedMonth}`);
+      const data = await response.json();
+      setExpenses(data);
+      calculateMonthlyTotals(data);
+      calculateCategoryTotals(data);
+    } catch (error) {
+      console.error('Failed to fetch expenses:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const calculateMonthlyTotals = (expenseData: Expense[]) => {
@@ -165,162 +200,169 @@ const ExpenseAnalysis: React.FC = () => {
   return (
     <div className="w-full max-w-4xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-4">Expense Analysis</h2>
-      <div className="mb-4 flex items-center">
-        <select
-          value={selectedYear}
-          onChange={handleYearChange}
-          className="mr-2 p-2 border rounded"
-        >
-          {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
-        <select
-          value={selectedMonth}
-          onChange={handleMonthChange}
-          className="mr-2 p-2 border rounded"
-        >
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-            <option key={month} value={month}>
-              {new Date(2000, month - 1, 1).toLocaleString('default', { month: 'long' })}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={fetchExpenses}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Fetch
-        </button>
-      </div>
-      <div className="mb-8">
-        <Bar data={barChartData} options={barChartOptions} />
-      </div>
-      <div className="mb-8">
-        <Doughnut data={doughnutChartData} options={doughnutChartOptions} />
-      </div>
-      <div className="mb-8">
-        <h3 className="text-xl font-bold mb-4">Monthly Transactions</h3>
-        <table className="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border border-gray-300 p-2">Date</th>
-              <th className="border border-gray-300 p-2">Description</th>
-              <th className="border border-gray-300 p-2">Amount</th>
-              <th className="border border-gray-300 p-2">Category</th>
-              <th className="border border-gray-300 p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {expenses.map((expense) => (
-              <tr key={expense._id}>
-                <td className="border border-gray-300 p-2">{new Date(expense.date).toLocaleDateString()}</td>
-                <td className="border border-gray-300 p-2">{expense.description}</td>
-                <td className="border border-gray-300 p-2">${expense.amount.toFixed(2)}</td>
-                <td className="border border-gray-300 p-2">{expense.category}</td>
-                <td className="border border-gray-300 p-2">
-                  <button
-                    onClick={() => handleEdit(expense)}
-                    className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded mr-2"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onDoubleClick={() => handleDelete(expense._id)}
-                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
+      <div className="mb-4 flex items-center space-x-2">
+        <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select year" />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+              <SelectItem key={year} value={year.toString()}>
+                {year}
+              </SelectItem>
             ))}
-          </tbody>
-        </table>
+          </SelectContent>
+        </Select>
+        <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select month" />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+              <SelectItem key={month} value={month.toString()}>
+                {new Date(2000, month - 1, 1).toLocaleString('default', { month: 'long' })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button onClick={fetchExpenses} variant="default">
+          Fetch
+        </Button>
       </div>
-      {editingExpense && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <h3 className="text-lg font-bold mb-4">Edit Expense</h3>
-            <form onSubmit={handleUpdate}>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  id="description"
-                  value={editingExpense.description}
-                  onChange={(e) => setEditingExpense({ ...editingExpense, description: e.target.value })}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="amount">
-                  Amount
-                </label>
-                <input
-                  type="number"
-                  id="amount"
-                  value={editingExpense.amount}
-                  onChange={(e) => setEditingExpense({ ...editingExpense, amount: parseFloat(e.target.value) })}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  required
-                  step="0.01"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="category">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  value={editingExpense.category}
-                  onChange={(e) => setEditingExpense({ ...editingExpense, category: e.target.value })}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  required
-                >
-                  <option value="">Select a category</option>
-                  {EXPENSE_CATEGORIES.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="date">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  id="date"
-                  value={editingExpense.date.split('T')[0]}
-                  onChange={(e) => setEditingExpense({ ...editingExpense, date: e.target.value })}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  required
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <button
-                  type="submit"
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                >
-                  Update
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingExpense(null)}
-                  className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+      {isLoading ? (
+        <div className="space-y-4">
+          <div className="space-y-4">
+            <Skeleton className="h-[300px] w-full animate-pulse" style={{animation: 'pulse 0.5s ease-in-out infinite'}} />
+            <Skeleton className="h-[300px] w-full animate-pulse" style={{animation: 'pulse 0.5s ease-in-out infinite 0.1s'}} />
+            <Skeleton className="h-10 w-full animate-pulse" style={{animation: 'pulse 0.5s ease-in-out infinite 0.2s'}} />
+            <Skeleton className="h-10 w-full animate-pulse" style={{animation: 'pulse 0.5s ease-in-out infinite 0.3s'}} />
+            <Skeleton className="h-10 w-full animate-pulse" style={{animation: 'pulse 0.5s ease-in-out infinite 0.4s'}} />
           </div>
         </div>
+      ) : expenses.length !== 0 ? (
+        <>
+          <div className="mb-8">
+            <Bar data={barChartData} options={barChartOptions} />
+          </div>
+          <div className="mb-8">
+            <Doughnut data={doughnutChartData} options={doughnutChartOptions} />
+          </div>
+          <div className="mb-8">
+            <h3 className="text-xl font-bold mb-4">Monthly Transactions</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenses.map((expense) => (
+                  <TableRow key={expense._id}>
+                    <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{expense.description}</TableCell>
+                    <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                    <TableCell>{expense.category}</TableCell>
+                    <TableCell>
+                      <Button onClick={() => handleEdit(expense)} variant="outline" size="sm" className="mr-2">
+                        Edit
+                      </Button>
+                      <Button onDoubleClick={() => handleDelete(expense._id)} variant="destructive" size="sm">
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center p-16 text-gray-500">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-31 w-28 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          <p className="text-2xl font-semibold mb-4">No Expenses Added</p>
+          <p className="text-base mb-6">Start by adding some expenses to see your analysis.</p>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      )}
+      {editingExpense && (
+        <Dialog open={!!editingExpense} onOpenChange={() => setEditingExpense(null)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit Expense</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpdate}>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="description" className="text-right">
+                    Description
+                  </Label>
+                  <Input
+                    id="description"
+                    value={editingExpense.description}
+                    onChange={(e) => setEditingExpense({ ...editingExpense, description: e.target.value })}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="amount" className="text-right">
+                    Amount
+                  </Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    value={editingExpense.amount}
+                    onChange={(e) => setEditingExpense({ ...editingExpense, amount: parseFloat(e.target.value) })}
+                    className="col-span-3"
+                    step="0.01"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="category" className="text-right">
+                    Category
+                  </Label>
+                  <Select
+                    value={editingExpense.category}
+                    onValueChange={(value) => setEditingExpense({ ...editingExpense, category: value })}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EXPENSE_CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="date" className="text-right">
+                    Date
+                  </Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={editingExpense.date.split('T')[0]}
+                    onChange={(e) => setEditingExpense({ ...editingExpense, date: e.target.value })}
+                    className="col-span-3"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit">Update</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

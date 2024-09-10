@@ -2,8 +2,24 @@
 
 import React, { useState } from 'react';
 import Papa from 'papaparse';
-import { EXPENSE_CATEGORIES } from '@/commons';
+import { EXPENSE_CATEGORIES, midVibrate, smallVibrate } from '@/commons';
 import axios from 'axios';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import { SelectTrigger } from '@radix-ui/react-select';
+import { toast } from 'sonner';
+
 
 const BulkAddExpenses: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -39,9 +55,15 @@ const BulkAddExpenses: React.FC = () => {
     }
   };
 
-  const handleCategoryChange = (index: number, category: string) => {
+  // const handleCategoryChange = (index: number, category: string) => {
+  //   const updatedExpenses = [...expenses];
+  //   updatedExpenses[index].category = category;
+  //   setExpenses(updatedExpenses);
+  // };
+
+  const handleTableCellChange = (index: number, value: string, type: string) => {
     const updatedExpenses = [...expenses];
-    updatedExpenses[index].category = category;
+    updatedExpenses[index][type] = value;
     setExpenses(updatedExpenses);
   };
 
@@ -49,16 +71,22 @@ const BulkAddExpenses: React.FC = () => {
     setIsLoading(true);
     setError(null);
 
+    expenses.forEach(e => {
+      e.date = new Date(e.date).toISOString();
+      e.category = e.category || EXPENSE_CATEGORIES[12];
+    });
+
     try {
       const response = await axios.patch('/api/expenses', { expenses });
       console.log('Expenses saved successfully:', response.data);
-      // Clear the form or show a success message
       setExpenses([]);
       setCsvText('');
       setFile(null);
-      // You might want to show a success message to the user here
+      toast("✅ Expense Added");
+      smallVibrate(navigator);
     } catch (err) {
-      console.error('Error saving expenses:', err);
+      midVibrate(navigator);
+      toast("❌ Expense Not Added")
       setError('Failed to save expenses. Please try again.');
     } finally {
       setIsLoading(false);
@@ -69,66 +97,91 @@ const BulkAddExpenses: React.FC = () => {
     <div className="w-full max-w-4xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-4">Bulk Add Expenses</h2>
       <div className="mb-4">
-        <input type="file" accept=".csv" onChange={handleFileChange} className="mb-2" />
+        <Input type="file" accept=".csv" onChange={handleFileChange} className="mb-2" />
         <p className="text-sm text-gray-600 mb-2">Or paste CSV content below:</p>
-        <textarea
+        <Textarea
           value={csvText}
           onChange={handleTextAreaChange}
-          className="w-full h-32 p-2 border rounded"
+          className="w-full h-32"
           placeholder="Paste CSV content here..."
         />
       </div>
-      <input 
+      <Input 
         type="date" 
         value={date} 
         onChange={(e) => setDate(e.target.value)} 
         className="mb-4 mr-4"
       />
-      <button onClick={handleUpload} className="bg-blue-500 text-white px-4 py-2 rounded">Upload</button>
-      
+      <Button onClick={handleUpload} variant="default">Upload</Button>
       {expenses.length > 0 && (
         <div className="mt-4">
           <h3 className="text-xl font-semibold mb-2">Extracted Expenses</h3>
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Date</th>
-                <th>Category</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Description</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Category</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {expenses.map((expense, index) => (
-                <tr key={index}>
-                  <td>{expense.description}</td>
-                  <td>{expense.amount}</td>
-                  <td>{expense.date}</td>
-                  <td>
-                    <select 
-                      value={expense.category || ''}
-                      onChange={(e) => handleCategoryChange(index, e.target.value)}
+                <TableRow key={index}>
+                  <TableCell>
+                    <Input
+                      id="description"
+                      value={expense.description}
+                      onChange={(e) => handleTableCellChange(index, e.target.value, 'description')}
+                      className="col-span-3"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      id="amount"
+                      value={expense.amount}
+                      onChange={(e) => handleTableCellChange(index, e.target.value, 'amount')}
+                      className="col-span-3"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      id="date"
+                      value={expense.date}
+                      onChange={(e) => handleTableCellChange(index, e.target.value, 'date')}
+                      className="col-span-3"
+                      type='date'
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={expense.category || EXPENSE_CATEGORIES[12]}
+                      onValueChange={(value) => handleTableCellChange(index, value, 'category')}
                     >
-                      <option value="">Select category</option>
-                      {EXPENSE_CATEGORIES.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                      {/* Add more categories as needed */}
-                    </select>
-                  </td>
-                </tr>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EXPENSE_CATEGORIES.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-          <button 
+            </TableBody>
+          </Table>
+          <Button 
             onClick={handleSubmit} 
-            className={`mt-4 bg-green-500 text-white px-4 py-2 rounded ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className="mt-4"
+            variant="default"
             disabled={isLoading}
           >
             {isLoading ? 'Saving...' : 'Save Expenses'}
-          </button>
+          </Button>
           {error && <p className="text-red-500 mt-2">{error}</p>}
         </div>
       )}

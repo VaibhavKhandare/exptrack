@@ -46,32 +46,40 @@ export interface Expense {
 }
 
 export interface ExpenseDocument extends Omit<Expense, 'date'> {
-  date: string;
 }
 
-export async function getExpenses(startDate?: Date, endDate?: Date): Promise<ExpenseDocument[]> {
+export async function getExpenses(startDate?: string, endDate?: string): Promise<ExpenseDocument[]> {
   const client = await clientPromise;
   const db = client.db("expenseTracker");
   
   let query = {};
   if (startDate || endDate) {
     query = {
-      date: {
+      'date': {
         ...(startDate && { $gte: startDate }),
         ...(endDate && { $lte: endDate })
       }
     };
   }
 
+  console.log('query', query)
+
   const expenses = await db.collection<Expense>("expenses")
     .find(query)
     .sort({ date: -1 })
     .toArray();
 
-  return expenses.map(expense => ({
+    // const expenses2 = await db.collection<Expense>("expenses")
+    // .find({})
+    // .sort({ date: -1 })
+    // .toArray();
+
+  // console.log('expenses', expenses.length, expenses2.length)
+
+  return expenses.map(expense => {
+    return {
     ...expense,
-    date: expense.date.toISOString(),
-  }));
+  }});
 }
 
 async function getExpensesCollection() {
@@ -82,7 +90,7 @@ async function getExpensesCollection() {
 
 export async function addExpense(expense: Expense | Expense[]): Promise<{ insertedId?: ObjectId, insertedCount?: number }> {
   const collection = await getExpensesCollection();
-  
+  console.log('expense', expense)
   if (Array.isArray(expense)) {
     const result = await collection.insertMany(expense);
     return { insertedCount: result.insertedCount };

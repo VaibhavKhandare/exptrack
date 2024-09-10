@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,12 +18,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {children}
-        <nav className="fixed bottom-0 left-0 right-0 bg-gray-800 p-4">
-          <ul className="flex justify-between">
+      <body className={`${inter.className} flex flex-col`} style={{ height: 'calc(100vh - 64px)' }}>
+        <div className="flex-grow overflow-y-auto pb-20">
+          <div className="min-h-full">
+            {children}
+          </div>
+        </div>
+        <nav className="fixed bottom-0 left-0 right-0 bg-gray-800 p-4 z-10 w-full h-16">
+          <ul className="flex justify-between max-w-screen-xl mx-auto">
             <li className="flex-1 text-center">
-              <Link href="/" className="text-white hover:text-gray-300 inline-block">
+              <Link href="/homepage" className="text-white hover:text-gray-300 inline-block">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
@@ -36,14 +41,22 @@ export default function RootLayout({
               </Link>
             </li>
             <li className="flex-1 text-center">
-              <Link href="/bulk-add" className="text-white hover:text-gray-300 inline-block">
+              <Link href="/" className="text-white hover:text-gray-300 inline-block">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </Link>
             </li>
+            <li className="flex-1 text-center">
+              <Link href="/bulk-add" className="text-white hover:text-gray-300 inline-block">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </Link>
+            </li>
           </ul>
         </nav>
+        <Toaster />
       </body>
     </html>
   );

@@ -13,3 +13,16 @@ export const EXPENSE_CATEGORIES = [
     'Savings',
     'Other'
   ] as const;
+
+export const smallVibrate = (navigator: any) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(200);
+  }
+}
+
+export const midVibrate = (navigator: any) => {
+  if (navigator.vibrate) {
+    navigator.vibrate(400);
+  }
+}
+  

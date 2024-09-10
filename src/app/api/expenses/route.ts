@@ -39,8 +39,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Month and year are required' }, { status: 400 })
     }
 
-    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
-    const endDate = new Date(parseInt(year), parseInt(month), 0)
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1).toISOString()
+    const endDate = new Date(parseInt(year), parseInt(month), 1).toISOString()
 
     const expenses = await getExpenses(startDate, endDate)
     return NextResponse.json(expenses)
@@ -106,6 +106,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const { expenses } = await request.json();
 
+
     if (!Array.isArray(expenses) || expenses.length === 0) {
       return NextResponse.json({ error: 'Invalid expenses data' }, { status: 400 });
     }
@@ -115,7 +116,7 @@ export async function PATCH(request: NextRequest) {
       amount: Number(expense.amount),
       category: expense.category as ExpenseCategory,
       saving: Number(expense.saving),
-      date: expense.date ? new Date(expense.date) : new Date(),
+      date: expense.date ? expense.date : new Date().toISOString(),
       _id: new ObjectId()
     }));
 
