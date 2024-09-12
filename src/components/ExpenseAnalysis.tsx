@@ -100,7 +100,7 @@ const ExpenseAnalysis: React.FC = () => {
   };
 
   const doughnutChartData = {
-    labels: Object.keys(categoryTotals).map(category => `${category} ($${categoryTotals[category].toFixed(2)})`),
+    labels: Object.keys(categoryTotals).map(category => `${category} (₹${categoryTotals[category].toFixed(2)})`),
     datasets: [
       {
         data: Object.values(categoryTotals),
@@ -264,7 +264,7 @@ const ExpenseAnalysis: React.FC = () => {
                   <TableRow key={expense._id}>
                     <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
                     <TableCell>{expense.description}</TableCell>
-                    <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                    <TableCell>₹{expense.amount.toFixed(2)}</TableCell>
                     <TableCell>{expense.category}</TableCell>
                     <TableCell>
                       <Button onClick={() => handleEdit(expense)} variant="outline" size="sm" className="mr-2">

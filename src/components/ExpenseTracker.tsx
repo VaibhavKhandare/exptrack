@@ -16,10 +16,8 @@ import { Slider } from '@/components/ui/slider'
 const ExpenseTracker: React.FC = () => {
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
-  const [secondAmount, setSecondAmount] = useState('0')
   const [category, setCategory] = useState<typeof EXPENSE_CATEGORIES[number]>(EXPENSE_CATEGORIES[0])
   const [saving, setSaving] = useState('')
-  const [secondSaving, setSecondSaving] = useState('0')
 
   const [showAmountControls, setShowAmountControls] = useState(true)
   const [showSavingControls, setShowSavingControls] = useState(false)
@@ -59,34 +57,6 @@ const ExpenseTracker: React.FC = () => {
       midVibrate(navigator);
       toast("❌ Expense Incorrect")
     }
-    // e.preventDefault()
-    // if ( amount && category) {
-    //   const response = await fetch('/api/expenses', {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify({ 
-    //       description, 
-    //       amount: parseFloat(amount), 
-    //       category, 
-    //       saving: saving ? parseFloat(saving) : 0 
-    //     }),
-    //   })
-
-    //   if (response.ok) {
-    //     setDescription('')
-    //     setAmount('')
-    //     setCategory(EXPENSE_CATEGORIES[0])
-    //     setSaving('')
-    //     setShowAmountControls(false)
-    //     setShowSavingControls(false)
-    //     toast("✅ Expense Added")
-    //     router.refresh()
-    //   }
-    // } else{
-    //   toast("❌ Expense Incorrect")
-    // }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -97,11 +67,31 @@ const ExpenseTracker: React.FC = () => {
   }
 
   const quickAddAmount = (value: number) => {
-    setAmount(value.toString());
+    setAmount((prevAmount) => {
+      const newAmount = (parseFloat(prevAmount) || 0) + value;
+      return newAmount.toString();
+    });
+  }
+
+  const quickReduceAmount = (value: number) => {
+    setAmount((prevAmount) => {
+      const newAmount = Math.max((parseFloat(prevAmount) || 0) - value, 0);
+      return newAmount.toString();
+    });
   }
 
   const quickAddSaving = (value: number) => {
-    setSaving(value.toString());
+    setSaving((prevSaving) => {
+      const newSaving = (parseFloat(prevSaving) || 0) + value;
+      return newSaving.toString();
+    });
+  }
+
+  const quickReduceSaving = (value: number) => {
+    setSaving((prevSaving) => {
+      const newSaving = Math.max((parseFloat(prevSaving) || 0) - value, 0);
+      return newSaving.toString();
+    });
   }
 
   const commonValues = [10, 20, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000];
@@ -224,54 +214,44 @@ const ExpenseTracker: React.FC = () => {
                   : "max-h-0 opacity-0"
               }`}
             >
-              <div className="flex flex-col space-y-2">
-                <Slider
-                  min={0}
-                  max={2000}
-                  step={100}
-                  value={[parseInt(amount) || 0]}
-                  onValueChange={(value:any) => {
-                    const newAmount = value[0].toString();
-                    setSecondAmount(newAmount);
-                    setAmount(newAmount);
-                  }}
-                  className="w-full py-2"
-                />
-                <Slider
-                  min={parseInt(secondAmount) - 50}
-                  max={parseInt(secondAmount) + 50}
-                  step={10}
-                  value={[parseInt(amount) || 0]}
-                  onValueChange={(value:any) => {
-                    const newAmount = value[0].toString();
-                    setAmount(newAmount);
-                  }}
-                  className="w-full py-4"
-                />
+              <Slider
+                min={0}
+                max={2000}
+                step={100}
+                value={[parseInt(amount) || 0]}
+                onValueChange={(value:any) => {
+                  const newAmount = value[0].toString();
+                  setAmount(newAmount);
+                }}
+                className="w-full py-2"
+              />
+              <div className="flex justify-between mb-2">
+                {[10, 50, 100, 500, 1000].map((value) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    onClick={() => quickAddAmount(value)}
+                    variant="outline"
+                    size="sm"
+                    className="w-[18%]"
+                  >
+                    +{value}
+                  </Button>
+                ))}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {commonValues.map((value, idx) => {
-                  // const hue = Math.max(0, 70 - value / 16); // Gradually changes from yellow (60) to red (0)
-                  // const bgColor = `hsl(${hue}, 70%, 50%)`;
-                  const bgColor = `hsl(0, 0%, ${Math.max(0, 70 - (idx*2.5))}%)`;
-                  // const textColor = `hsl(0, 0%, ${Math.max((idx*20),0)}%)`;
-                  // const hoverColor = `hsl(${hue}, 70%, 45%)`;
-
-                  return (
-                    <Button
-                      key={value}
-                      type="button"
-                      onClick={() => quickAddAmount(value)}
-                      className={`px-2 py-1 text-sm text-white`}
-                      style={{
-                        backgroundColor: bgColor,
-                        // color: textColor
-                      }}
-                    >
-                      {value}
-                    </Button>
-                  );
-                })}
+              <div className="flex justify-between">
+                {[10, 50, 100, 500, 1000].map((value) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    onClick={() => quickReduceAmount(value)}
+                    variant="outline"
+                    size="sm"
+                    className="w-[18%]"
+                  >
+                    -{value}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
@@ -330,40 +310,38 @@ const ExpenseTracker: React.FC = () => {
                 value={[parseInt(saving) || 0]}
                 onValueChange={(value:any) => {
                   const newSaving = value[0].toString();
-                  setSecondSaving(newSaving);
                   setSaving(newSaving);
                 }}
                 className="w-full py-2"
               />
-              <Slider
-                min={parseInt(secondSaving) - 50}
-                max={parseInt(secondSaving) + 50}
-                step={10}
-                value={[parseInt(saving) || 0]}
-                onValueChange={(value:any) => {
-                  const newSaving = value[0].toString();
-                  setSaving(newSaving);
-                }}
-                className="w-full py-4"
-              />
             </div>
-            <div className="flex flex-wrap gap-2">
-              {commonValues.map((value, idx) => {
-                const bgColor = `hsl(0, 0%, ${Math.max(0, 70 - (idx*2.5))}%)`;
-                return (
-                  <Button
-                    key={value}
-                    type="button"
-                    onClick={() => quickAddSaving(value)}
-                    className={`px-2 py-1 text-sm text-white`}
-                    style={{
-                      backgroundColor: bgColor,
-                    }}
-                  >
-                    {value}
-                  </Button>
-                );
-              })}
+            <div className="flex justify-between mb-2">
+              {[10, 50, 100, 500, 1000].map((value) => (
+                <Button
+                  key={value}
+                  type="button"
+                  onClick={() => quickAddSaving(value)}
+                  variant="outline"
+                  size="sm"
+                  className="w-[18%]"
+                >
+                  +{value}
+                </Button>
+              ))}
+            </div>
+            <div className="flex justify-between">
+              {[10, 50, 100, 500, 1000].map((value) => (
+                <Button
+                  key={value}
+                  type="button"
+                  onClick={() => quickReduceSaving(value)}
+                  variant="outline"
+                  size="sm"
+                  className="w-[18%]"
+                >
+                  -{value}
+                </Button>
+              ))}
             </div>
           </div>
         </div>
