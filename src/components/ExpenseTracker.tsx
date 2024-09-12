@@ -217,7 +217,7 @@ const ExpenseTracker: React.FC = () => {
               <Slider
                 min={0}
                 max={2000}
-                step={100}
+                step={1}
                 value={[parseInt(amount) || 0]}
                 onValueChange={(value:any) => {
                   const newAmount = value[0].toString();
@@ -415,6 +415,7 @@ const ExpenseTracker: React.FC = () => {
                 if (deltaX + deltaY + deltaZ > shakeThreshold) {
                   shakeCount++;
                   if (shakeCount >= 2) {
+                    event.stopPropagation();
                     document.querySelector('button[type="submit"]').click();
                     shakeCount = 0;
                   }
