@@ -62,7 +62,7 @@ export async function getExpenses(startDate?: string, endDate?: string): Promise
     };
   }
 
-  console.log('query', query)
+  // console.log('query', query)
 
   const expenses = await db.collection<Expense>("expenses")
     .find(query)
@@ -90,7 +90,7 @@ async function getExpensesCollection() {
 
 export async function addExpense(expense: Expense | Expense[]): Promise<{ insertedId?: ObjectId, insertedCount?: number }> {
   const collection = await getExpensesCollection();
-  console.log('expense', expense)
+  // console.log('expense', expense)
   if (Array.isArray(expense)) {
     const result = await collection.insertMany(expense);
     return { insertedCount: result.insertedCount };

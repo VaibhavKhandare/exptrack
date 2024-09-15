@@ -73,7 +73,7 @@ const BulkAddExpenses: React.FC = () => {
 
     try {
       const response = await axios.patch('/api/expenses', { expenses });
-      console.log('Expenses saved successfully:', response.data);
+      // console.log('Expenses saved successfully:', response.data);
       setExpenses([]);
       setCsvText('');
       setFile(null);
