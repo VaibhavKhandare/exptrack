@@ -42,6 +42,8 @@ interface Expense {
   date: string;
 }
 
+const nonbudgetCategory = ["TFG", "Invest", "Rent", "House" ]
+
 const ExpenseAnalysis: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [monthlyTotals, setMonthlyTotals] = useState<{ [key: string]: number }>({});
@@ -99,6 +101,27 @@ const ExpenseAnalysis: React.FC = () => {
     ],
   };
 
+
+  const doughnutChartDataFiltered = {
+    labels: Object.keys(categoryTotals).filter(category => !nonbudgetCategory.includes(category)).map(category => `${category} (₹${categoryTotals[category].toFixed(2)})`),
+    datasets: [
+      {
+        data: Object.keys(categoryTotals).filter(category => !nonbudgetCategory.includes(category)).map(category => categoryTotals[category]),
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.6)',
+          'rgba(54, 162, 235, 0.6)',
+          'rgba(255, 206, 86, 0.6)',
+          'rgba(75, 192, 192, 0.6)',
+          'rgba(153, 102, 255, 0.6)',
+          'rgba(255, 159, 64, 0.6)',
+        ],
+      },
+    ],
+  };
+
+  const totalBudget = doughnutChartDataFiltered.datasets[0].data.reduce((acc, curr) => acc + curr, 0);
+  const totalMain = Object.values(categoryTotals).reduce((acc, curr) => acc + curr, 0);
+
   const doughnutChartData = {
     labels: Object.keys(categoryTotals).map(category => `${category} (₹${categoryTotals[category].toFixed(2)})`),
     datasets: [
@@ -114,19 +137,6 @@ const ExpenseAnalysis: React.FC = () => {
         ],
       },
     ],
-  };
-
-  const barChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: true,
-        text: 'Monthly Expense Analysis',
-      },
-    },
   };
 
   const doughnutChartOptions = {
@@ -242,8 +252,15 @@ const ExpenseAnalysis: React.FC = () => {
       ) : expenses.length !== 0 ? (
         <>
           <div className="mb-8">
-            <Bar data={barChartData} options={barChartOptions} />
+            <Bar data={doughnutChartDataFiltered} options={doughnutChartOptions} />
           </div>
+          <h3 className="text-xl font-bold mb-4">Total Budget: {totalBudget}</h3>
+          <h3 className="text-xl font-bold mb-4">Total Main: {totalMain}</h3>
+          
+          <div className="mb-8">
+            <Bar data={doughnutChartData} options={doughnutChartOptions} />
+          </div>
+          
           <div className="mb-8">
             <Doughnut data={doughnutChartData} options={doughnutChartOptions} />
           </div>
