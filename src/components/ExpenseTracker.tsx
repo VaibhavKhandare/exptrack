@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -23,7 +23,9 @@ const ExpenseTracker: React.FC = () => {
 
   const [showAmountControls, setShowAmountControls] = useState(true)
   const [showSavingControls, setShowSavingControls] = useState(false)
+  const classifyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const router = useRouter()
+  useEffect(() => () => { if (classifyTimeoutRef.current) clearTimeout(classifyTimeoutRef.current); }, [])
   const isMobile = useMediaQuery({ maxWidth: 767 });
 
   const addExpense = async (e: React.FormEvent) => {
@@ -150,14 +152,13 @@ const ExpenseTracker: React.FC = () => {
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newDescription = e.target.value;
     setDescription(newDescription);
-    
-    // Auto-classify after user stops typing (debounced)
+
+    if (classifyTimeoutRef.current) clearTimeout(classifyTimeoutRef.current);
     if (newDescription.length > 20) {
-      const timeoutId = setTimeout(() => {
+      classifyTimeoutRef.current = setTimeout(() => {
+        classifyTimeoutRef.current = null;
         classifySmsText(newDescription);
       }, 1000);
-      
-      return () => clearTimeout(timeoutId);
     }
   };
 
