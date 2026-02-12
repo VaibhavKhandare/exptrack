@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,8 @@ const ExpenseTracker: React.FC = () => {
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<typeof EXPENSE_CATEGORIES[number]>(EXPENSE_CATEGORIES[0])
   const [saving, setSaving] = useState('')
+  const [searchFilter, setSearchFilter] = useState('')
+  const [isClassifying, setIsClassifying] = useState(false)
 
   const [showAmountControls, setShowAmountControls] = useState(true)
   const [showSavingControls, setShowSavingControls] = useState(false)
@@ -105,12 +107,67 @@ const ExpenseTracker: React.FC = () => {
     }
   }
 
+  // Category groups definition
   const categoryGroups = [
     { name: 'Travel', categories: ['Necessary Travel', 'Friends Travel', 'Other Travel'] },
     { name: 'Food', categories: ['Basic Food', 'Zomato Food', 'Hotel Food', 'Dessert'] },
     { name: 'Expenses', categories: ['Rent', 'House', 'TFG', 'Invest'] },
     { name: 'Other', categories: ['Other'] }
   ];
+
+  // Auto-classify SMS when description looks like a transaction message
+  const classifySmsText = async (text: string) => {
+    // Check if text looks like an SMS transaction (contains Rs, debited, credited, etc.)
+    const smsPattern = /(?:debited|credited|paid|rs\.?|₹|transaction|amount)/i;
+    
+    if (smsPattern.test(text) && text.length > 20) {
+      setIsClassifying(true);
+      try {
+        const response = await fetch('/api/classify-sms/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text }),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          const data = result.data;
+          if (data.amount > 0) {
+            setAmount(data.amount.toString());
+            toast.success(`Auto-detected: ₹${data.amount} → ${data.category}`, { duration: 3000 });
+          }
+          if (data.category !== 'Other') {
+            setCategory(data.category as typeof EXPENSE_CATEGORIES[number]);
+          }
+        }
+      } catch (error) {
+        console.error('SMS classification failed:', error);
+      }
+      setIsClassifying(false);
+    }
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDescription = e.target.value;
+    setDescription(newDescription);
+    
+    // Auto-classify after user stops typing (debounced)
+    if (newDescription.length > 20) {
+      const timeoutId = setTimeout(() => {
+        classifySmsText(newDescription);
+      }, 1000);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  };
+
+  // Filter categories based on search
+  const filteredCategoryGroups = categoryGroups.map(group => ({
+    ...group,
+    categories: group.categories.filter(cat =>
+      searchFilter === '' || cat.toLowerCase().includes(searchFilter.toLowerCase())
+    )
+  })).filter(group => group.categories.length > 0);
 
   return (
     <Card className="w-full max-w-md m-auto p-6 overflow-auto mt-2">
@@ -143,9 +200,9 @@ const ExpenseTracker: React.FC = () => {
               </svg>
             </span>
             <Input
-              placeholder="Description"
+              placeholder="Description (paste SMS text for auto-classification)"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={handleDescriptionChange}
               onKeyPress={handleKeyPress}
               onFocus={() => {
                 setShowAmountControls(false);
@@ -153,7 +210,9 @@ const ExpenseTracker: React.FC = () => {
               }}
               className={`w-full pl-10 ${
                 isMobile ? "mb-4" : ""
-              } border-none focus:ring-2 focus:ring-blue-500`}
+              } border-none focus:ring-2 focus:ring-blue-500 ${
+                isClassifying ? 'bg-blue-50' : ''
+              }`}
             />
             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
               <Image
@@ -345,8 +404,36 @@ const ExpenseTracker: React.FC = () => {
             </div>
           </div>
         </div>
+        {/* Category Search */}
+        <div>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            <Input
+              placeholder="Search categories..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="w-full pl-10 border-none focus:ring-2 focus:ring-blue-500"
+            />
+            {searchFilter && (
+              <Button
+                type="button"
+                onClick={() => setSearchFilter('')}
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+              >
+                ×
+              </Button>
+            )}
+          </div>
+        </div>
+
         <div className="space-y-2">
-          {categoryGroups.map((group) => (
+          {filteredCategoryGroups.map((group) => (
             <div key={group.name} className="space-y-1">
               <div className="flex flex-wrap gap-2">
                 {group.categories.map((cat) => (
